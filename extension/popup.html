@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Forge Swapper</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body class="popup">
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <h1>Forge Swapper</h1>
+          <p id="statusText">Ready</p>
+        </div>
+        <button id="optionsButton" class="icon-button" title="选项" aria-label="选项">⚙</button>
+      </header>
+
+      <section class="panel">
+        <label class="field">
+          <span>基础图 PNG</span>
+          <input id="imageFile" type="file" accept="image/png">
+        </label>
+        <label class="check-field">
+          <input id="cleanTemplateWithLlm" type="checkbox">
+          <span>上传时用 LLM 去除角色提示词</span>
+        </label>
+        <div class="button-row">
+          <button id="cleanCurrentTemplate" class="secondary" type="button">用 LLM 清理当前模板</button>
+        </div>
+        <div id="cleanTemplateLog" class="summary clean-summary"></div>
+        <label class="field">
+          <span>角色替换区</span>
+          <input id="characterSegment" type="text" autocomplete="off">
+        </label>
+        <label class="field">
+          <span>正向提示词</span>
+          <textarea id="positivePrompt" rows="5" spellcheck="false"></textarea>
+        </label>
+        <label class="field">
+          <span>负向提示词</span>
+          <textarea id="negativePrompt" rows="3" spellcheck="false"></textarea>
+        </label>
+        <div id="paramSummary" class="summary"></div>
+        <button id="saveTemplate" class="primary">保存基础模板</button>
+      </section>
+
+      <section class="panel compact">
+        <div class="split">
+          <div>
+            <span class="label">最近识别</span>
+            <strong id="lastCharacter">无</strong>
+          </div>
+          <button id="generateAgain" class="secondary">再生成</button>
+        </div>
+      </section>
+
+      <section class="panel result-panel">
+        <img id="resultImage" alt="" hidden>
+        <div class="result-actions">
+          <button id="downloadResult" class="secondary">保存结果</button>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

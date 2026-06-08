@@ -1,0 +1,23 @@
+# Local extension package/signing artifacts
+extension.crx
+extension.pem
+*.pem
+*.crx
+
+# Secrets and local machine state
+.env
+.env.*
+!.env.example
+
+# Dependencies and generated output
+node_modules/
+dist/
+build/
+coverage/
+*.log
+
+# OS/editor noise
+Thumbs.db
+.DS_Store
+.vscode/
+.idea/

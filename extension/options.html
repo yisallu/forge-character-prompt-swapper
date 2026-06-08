@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Forge Swapper Options</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="options-shell">
+      <header class="page-header">
+        <h1>Forge Swapper</h1>
+        <p id="saveStatus">Options</p>
+      </header>
+
+      <section class="panel">
+        <label class="field">
+          <span>LLM Base URL</span>
+          <input id="llmBaseUrl" type="url" autocomplete="off">
+        </label>
+        <label class="field">
+          <span>LLM Model</span>
+          <input id="llmModel" type="text" autocomplete="off">
+        </label>
+        <label class="field">
+          <span>API Key</span>
+          <input id="llmApiKey" type="password" autocomplete="off">
+        </label>
+        <div class="grid-2">
+          <label class="check-field option-check">
+            <input id="limitCharacterTags" type="checkbox">
+            <span>限制角色标签数量</span>
+          </label>
+          <label class="field">
+            <span>角色标签数量</span>
+            <input id="characterTagLimit" type="number" min="1" max="20" step="1">
+          </label>
+        </div>
+      </section>
+
+      <section class="panel">
+        <label class="field">
+          <span>Forge API URL</span>
+          <input id="forgeApiUrl" type="url" autocomplete="off">
+        </label>
+        <label class="field">
+          <span>SD 模型</span>
+          <select id="sdModelCheckpoint">
+            <option value="">沿用 Forge 当前模型</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Seed</span>
+          <select id="seedMode">
+            <option value="random">每次随机 seed</option>
+          </select>
+        </label>
+        <div class="grid-2">
+          <label class="field">
+            <span>放大</span>
+            <select id="hiresMode">
+              <option value="template">沿用基础图参数</option>
+              <option value="off">不放大</option>
+              <option value="on">放大</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>放大模型</span>
+            <select id="hiresUpscaler">
+              <option value="">沿用基础图/Forge 默认</option>
+            </select>
+          </label>
+        </div>
+        <div class="grid-2">
+          <label class="field">
+            <span>放大倍率</span>
+            <input id="hiresScale" type="number" min="1" step="0.1">
+          </label>
+          <label class="field">
+            <span>重绘幅度</span>
+            <input id="hiresDenoisingStrength" type="number" min="0" max="1" step="0.01" placeholder="沿用基础图">
+          </label>
+        </div>
+        <div class="grid-2">
+          <label class="field">
+            <span>LLM Timeout ms</span>
+            <input id="llmTimeoutMs" type="number" min="5000" step="1000">
+          </label>
+          <label class="field">
+            <span>Generate Timeout ms</span>
+            <input id="generationTimeoutMs" type="number" min="10000" step="1000">
+          </label>
+        </div>
+      </section>
+
+      <section class="panel">
+        <label class="field">
+          <span>Yisalbot Token</span>
+          <input id="yisalbotToken" type="password" autocomplete="off">
+        </label>
+        <label class="field">
+          <span>Yisalbot Chat ID</span>
+          <input id="yisalbotChatId" type="text" autocomplete="off">
+        </label>
+      </section>
+
+      <div class="button-row">
+        <button id="saveButton" class="primary">保存</button>
+        <button id="refreshForgeResources" class="secondary">刷新 SD 列表</button>
+        <button id="testForge" class="secondary">测试 Forge</button>
+        <button id="testYisalbot" class="secondary">测试 Yisalbot</button>
+      </div>
+    </main>
+    <script type="module" src="options.js"></script>
+  </body>
+</html>

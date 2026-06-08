@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Forge Swapper Run</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body class="run-page">
+    <main class="run-shell">
+      <header class="run-header">
+        <div>
+          <h1>Forge Swapper</h1>
+          <p id="jobMeta">Loading</p>
+        </div>
+        <div class="button-row">
+          <button id="regeneratePrompt" class="secondary">重新生成</button>
+          <button id="refinePrompt" class="secondary">改提示词重生成</button>
+          <button id="saveDefaultPrompt" class="secondary">设为默认提示词</button>
+          <button id="copyPrompt" class="secondary">复制提示词</button>
+          <button id="openResultImage" class="secondary">打开图片</button>
+          <button id="downloadResult" class="secondary">保存图片</button>
+          <button id="openOptions" class="primary">选项</button>
+        </div>
+      </header>
+
+      <section class="run-grid">
+        <section class="panel run-main">
+          <div class="stage-line">
+            <strong id="phaseText">准备中</strong>
+            <span id="progressText">0%</span>
+          </div>
+          <progress id="progressBar" max="100" value="0"></progress>
+          <div class="detail-strip">
+            <div>
+              <span class="label">角色</span>
+              <strong id="characterName">未识别</strong>
+            </div>
+            <div>
+              <span class="label">推送</span>
+              <strong id="pushState">等待</strong>
+            </div>
+            <div>
+              <span class="label">模板</span>
+              <strong id="templateName">无</strong>
+            </div>
+          </div>
+          <img id="sourceImage" class="preview-image small-preview" alt="" hidden>
+          <div class="result-canvas">
+            <a id="resultImageLink" class="result-image-link" href="" target="_blank" rel="noopener" hidden>
+              <img id="resultImage" class="preview-image result-preview" alt="">
+            </a>
+          </div>
+          <label class="field refine-field">
+            <span>改图反馈</span>
+            <textarea id="refineFeedback" rows="2" spellcheck="false" placeholder="例如：角色不像、脸崩、表情更自然、保持构图但更像原角色"></textarea>
+          </label>
+          <section class="prompt-tag-editor" aria-label="提示词标签">
+            <div class="tag-section role-tag-section">
+              <div class="tag-section-head">
+                <span class="label">角色提示词（不保存为默认）</span>
+                <button id="addCharacterPromptTag" class="tag-add" type="button">新增角色标签</button>
+              </div>
+              <div id="characterPromptTags" class="tag-list role-tag-list"></div>
+              <textarea id="characterPromptOutput" class="prompt-output role-prompt-output" spellcheck="false" placeholder="角色名、作品、发色、眼睛、衣服、角色外观等，只用于本次生成"></textarea>
+            </div>
+            <div class="tag-section">
+              <div class="tag-section-head">
+                <span class="label">基础提示词标签（保存为默认）</span>
+                <div class="tag-tools">
+                  <div class="tag-language-toggle" aria-label="标签显示语言">
+                    <button id="tagLanguageEnglish" class="active" type="button">EN</button>
+                    <button id="tagLanguageChinese" type="button">中</button>
+                  </div>
+                  <button id="addPromptTag" class="tag-add" type="button">新增标签</button>
+                </div>
+              </div>
+              <div id="activePromptTags" class="tag-list"></div>
+            </div>
+            <div class="tag-section">
+              <span class="label">未启用标签</span>
+              <div id="inactivePromptTags" class="tag-list muted-tags"></div>
+            </div>
+          </section>
+          <textarea id="promptOutput" class="prompt-output" spellcheck="false" placeholder="基础质量、构图、场景、镜头等；不填写角色外观"></textarea>
+        </section>
+
+        <aside class="panel log-panel">
+          <h2>进度日志</h2>
+          <ol id="logList" class="log-list"></ol>
+        </aside>
+      </section>
+    </main>
+    <script type="module" src="run.js"></script>
+  </body>
+</html>

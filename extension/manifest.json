@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "Forge Character Prompt Swapper",
+  "version": "0.1.0",
+  "description": "Shift+click an image, identify its character with api.sysmeng.com, and generate in local SD WebUI Forge.",
+  "permissions": [
+    "activeTab",
+    "downloads",
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "<all_urls>",
+    "http://127.0.0.1/*",
+    "http://localhost/*",
+    "https://api.sysmeng.com/*",
+    "https://api.telegram.org/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "contentScript.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
+  "action": {
+    "default_title": "Forge Swapper",
+    "default_popup": "popup.html"
+  },
+  "options_page": "options.html"
+}
