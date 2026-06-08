@@ -55,6 +55,12 @@ async function handleMessage(message, sender) {
       });
     case "DOWNLOAD_LATEST_RESULT":
       return downloadLatestResult();
+    case "SAVE_RESULT_FILE":
+      return saveResultFile(message.imageDataUrl, message.meta || {});
+    case "OPEN_RESULT_FILE":
+      return openResultFile(message.downloadId, message.filePath);
+    case "SHOW_RESULT_FILE":
+      return showResultFile(message.downloadId, message.filePath);
     case "TEST_YISALBOT":
       return testYisalbot();
     default:
@@ -412,16 +418,119 @@ function sendTabToast(tabId, message, kind = "info") {
 async function downloadLatestResult() {
   const stored = await storageGet(STORAGE_KEYS.latestResult);
   const latest = stored[STORAGE_KEYS.latestResult];
+  if (latest?.file?.downloadId || latest?.file?.filePath) {
+    await showResultFile(latest.file.downloadId, latest.file.filePath);
+    return latest.file;
+  }
   if (!latest?.imageDataUrl) {
     throw new Error("还没有生成结果可保存");
   }
-  const filename = `forge-swapper-${new Date().toISOString().replace(/[:.]/g, "-")}.png`;
+  const file = await saveResultFile(latest.imageDataUrl, {
+    characterName: latest.character?.character_name || "",
+    prefix: "manual"
+  });
+  await saveLatestResult({
+    ...latest,
+    file
+  });
+  return file;
+}
+
+async function saveResultFile(imageDataUrl, meta = {}) {
+  if (!String(imageDataUrl || "").startsWith("data:image/")) {
+    throw new Error("没有可保存的图片数据");
+  }
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const character = sanitizeFilenamePart(meta.characterName || "result");
+  const prefix = sanitizeFilenamePart(meta.prefix || "forge-swapper");
+  const filename = `Forge Swapper/${prefix}-${character}-${stamp}.png`;
   const id = await chrome.downloads.download({
-    url: latest.imageDataUrl,
+    url: imageDataUrl,
     filename,
+    conflictAction: "uniquify",
     saveAs: false
   });
-  return { id, filename };
+  const item = await waitForDownloadItem(id);
+  return downloadItemToFileInfo(item);
+}
+
+async function openResultFile(downloadId, filePath) {
+  const item = await resolveDownloadItem(downloadId, filePath);
+  if (!item?.id) {
+    throw new Error("找不到硬盘图片文件");
+  }
+  await chrome.downloads.open(item.id);
+  return downloadItemToFileInfo(item);
+}
+
+async function showResultFile(downloadId, filePath) {
+  const item = await resolveDownloadItem(downloadId, filePath);
+  if (!item?.id) {
+    throw new Error("找不到硬盘图片文件");
+  }
+  await chrome.downloads.show(item.id);
+  return downloadItemToFileInfo(item);
+}
+
+async function resolveDownloadItem(downloadId, filePath) {
+  if (downloadId) {
+    const byId = await chrome.downloads.search({ id: Number(downloadId) });
+    if (byId[0]) {
+      return byId[0];
+    }
+  }
+  if (filePath) {
+    const byFilename = await chrome.downloads.search({ filename: filePath });
+    if (byFilename[0]) {
+      return byFilename[0];
+    }
+  }
+  return null;
+}
+
+async function waitForDownloadItem(id) {
+  const started = Date.now();
+  while (Date.now() - started < 120000) {
+    const items = await chrome.downloads.search({ id });
+    const item = items[0];
+    if (item?.state === "complete") {
+      return item;
+    }
+    if (item?.state === "interrupted") {
+      throw new Error(`图片保存失败：${item.error || "download interrupted"}`);
+    }
+    await sleep(250);
+  }
+  throw new Error("图片保存超时");
+}
+
+function downloadItemToFileInfo(item) {
+  return {
+    downloadId: item.id,
+    filePath: item.filename || "",
+    fileUrl: item.filename ? pathToFileUrl(item.filename) : "",
+    filename: item.filename || "",
+    url: item.url || "",
+    state: item.state || ""
+  };
+}
+
+function pathToFileUrl(filePath) {
+  const path = String(filePath || "").replace(/\\/g, "/");
+  return path ? `file:///${encodeURI(path)}` : "";
+}
+
+function sanitizeFilenamePart(value) {
+  return String(value || "")
+    .replace(/[<>:"/\\|?*\x00-\x1f]/g, "_")
+    .replace(/\s+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 80) || "image";
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function trimRight(value) {

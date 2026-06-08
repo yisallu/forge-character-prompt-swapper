@@ -51,6 +51,7 @@ const elements = {
   sourceImage: document.getElementById("sourceImage"),
   resultImageLink: document.getElementById("resultImageLink"),
   resultImage: document.getElementById("resultImage"),
+  resultFilePath: document.getElementById("resultFilePath"),
   refineFeedback: document.getElementById("refineFeedback"),
   promptOutput: document.getElementById("promptOutput"),
   activePromptTags: document.getElementById("activePromptTags"),
@@ -79,7 +80,7 @@ let currentSettings = null;
 let currentTemplate = null;
 let currentCharacter = null;
 let currentResult = null;
-let latestImageObjectUrl = "";
+let latestImageFile = null;
 let busy = false;
 let savedPromptTagState = null;
 let restoringPromptTags = false;
@@ -104,7 +105,7 @@ elements.refinePrompt.addEventListener("click", () => refinePromptAndRegenerate(
 elements.saveDefaultPrompt.addEventListener("click", () => saveCurrentPromptAsDefault());
 elements.copyPrompt.addEventListener("click", () => copyText(currentPromptText()));
 elements.openResultImage.addEventListener("click", () => openResultImage());
-elements.downloadResult.addEventListener("click", () => chrome.runtime.sendMessage({ type: "DOWNLOAD_LATEST_RESULT" }));
+elements.downloadResult.addEventListener("click", () => showResultFileInFolder());
 elements.openOptions.addEventListener("click", () => chrome.runtime.openOptionsPage());
 elements.addPromptTag.addEventListener("click", () => addPromptTag());
 elements.addCharacterPromptTag.addEventListener("click", () => addCharacterPromptTag());
@@ -233,7 +234,8 @@ async function generatePromptImage(prompt, template, settings, character, submit
   }
 
   latestImageDataUrl = firstImage.startsWith("data:") ? firstImage : `data:image/png;base64,${firstImage}`;
-  await showResultImage(latestImageDataUrl);
+  const file = await saveResultImageToDisk(latestImageDataUrl, character);
+  await showResultImage(latestImageDataUrl, file);
   elements.sourceImage.hidden = true;
   document.body.classList.add("result-ready");
   elements.resultImage.scrollIntoView({ block: "center" });
@@ -244,7 +246,8 @@ async function generatePromptImage(prompt, template, settings, character, submit
     character,
     prompt,
     payload,
-    sourceTemplateName: template.fileName || ""
+    sourceTemplateName: template.fileName || "",
+    file
   };
   currentResult = result;
   await saveLatestResult(result);
@@ -585,23 +588,78 @@ async function refinePromptAndRegenerate() {
   }
 }
 
-async function showResultImage(dataUrl) {
-  if (latestImageObjectUrl) {
-    URL.revokeObjectURL(latestImageObjectUrl);
+async function saveResultImageToDisk(dataUrl, character) {
+  await step("保存图片到硬盘", 90);
+  const response = await chrome.runtime.sendMessage({
+    type: "SAVE_RESULT_FILE",
+    imageDataUrl: dataUrl,
+    meta: {
+      prefix: "forge-swapper",
+      characterName: character?.character_name || character?.character_prompt || "result"
+    }
+  });
+  if (!response?.ok) {
+    throw new Error(response?.error || "保存图片到硬盘失败");
   }
-  const blob = await dataUrlToBlob(dataUrl);
-  latestImageObjectUrl = URL.createObjectURL(blob);
-  elements.resultImage.src = latestImageObjectUrl;
-  elements.resultImageLink.href = latestImageObjectUrl;
+  await log("success", `图片已保存到硬盘：${response.result?.filePath || response.result?.filename || "未知路径"}`);
+  return response.result;
+}
+
+async function showResultImage(dataUrl, file) {
+  latestImageFile = file || null;
+  const fileUrl = file?.fileUrl || "";
+  elements.resultImage.onerror = () => {
+    if (fileUrl && elements.resultImage.src === fileUrl) {
+      elements.resultImage.onerror = null;
+      elements.resultImage.src = dataUrl;
+      log("error", "Chrome 当前不允许直接预览 file:// 图片，已用内存数据预览；打开/保存按钮仍使用硬盘文件").catch(() => {});
+    }
+  };
+  elements.resultImage.src = fileUrl || dataUrl;
+  elements.resultImageLink.href = fileUrl || dataUrl;
   elements.resultImageLink.hidden = false;
+  if (file?.filePath) {
+    elements.resultFilePath.textContent = file.filePath;
+    elements.resultFilePath.hidden = false;
+  }
 }
 
 async function openResultImage() {
-  if (!latestImageObjectUrl) {
+  if (!latestImageFile?.downloadId && !latestImageFile?.filePath) {
     await log("error", "还没有图片可打开");
     return;
   }
-  window.open(latestImageObjectUrl, "_blank", "noopener");
+  const response = await chrome.runtime.sendMessage({
+    type: "OPEN_RESULT_FILE",
+    downloadId: latestImageFile.downloadId,
+    filePath: latestImageFile.filePath
+  });
+  if (!response?.ok) {
+    await log("error", response?.error || "打开硬盘图片失败");
+    return;
+  }
+  await log("success", `已打开硬盘图片：${latestImageFile.filePath || latestImageFile.filename}`);
+}
+
+async function showResultFileInFolder() {
+  if (!latestImageFile?.downloadId && !latestImageFile?.filePath) {
+    const response = await chrome.runtime.sendMessage({ type: "DOWNLOAD_LATEST_RESULT" });
+    if (!response?.ok) {
+      await log("error", response?.error || "保存图片失败");
+      return;
+    }
+    latestImageFile = response.result;
+  }
+  const response = await chrome.runtime.sendMessage({
+    type: "SHOW_RESULT_FILE",
+    downloadId: latestImageFile.downloadId,
+    filePath: latestImageFile.filePath
+  });
+  if (!response?.ok) {
+    await log("error", response?.error || "显示硬盘图片失败");
+    return;
+  }
+  await log("success", `已在文件夹中显示：${latestImageFile.filePath || latestImageFile.filename}`);
 }
 
 async function refinePromptWithLlm({ imageDataUrl, prompt, feedback, settings, character, result }) {
@@ -825,7 +883,7 @@ function setBusy(value) {
   elements.refinePrompt.disabled = value;
   elements.saveDefaultPrompt.disabled = value && !currentBasePromptText();
   elements.copyPrompt.disabled = value && !currentPromptText();
-  elements.openResultImage.disabled = value && !latestImageObjectUrl;
+  elements.openResultImage.disabled = value && !latestImageFile;
   elements.downloadResult.disabled = value && !latestImageDataUrl;
 }
 

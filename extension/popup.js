@@ -318,7 +318,11 @@ async function renderRuntimeState() {
 
   const latest = stored[STORAGE_KEYS.latestResult];
   if (latest?.imageDataUrl) {
-    elements.resultImage.src = latest.imageDataUrl;
+    elements.resultImage.src = latest.file?.fileUrl || latest.imageDataUrl;
+    elements.resultImage.onerror = () => {
+      elements.resultImage.onerror = null;
+      elements.resultImage.src = latest.imageDataUrl;
+    };
     elements.resultImage.hidden = false;
   }
 }

@@ -285,6 +285,17 @@ progress.danger {
   text-decoration: none;
 }
 
+.result-file-path {
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #f8fafc;
+  color: var(--muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
 .run-page #resultImage {
   max-height: calc(100vh - 210px);
 }
