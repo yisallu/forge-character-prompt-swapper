@@ -26,6 +26,15 @@
           <span>API Key</span>
           <input id="llmApiKey" type="password" autocomplete="off">
         </label>
+        <div class="probe-box">
+          <div class="probe-head">
+            <button id="probeVisionModels" class="secondary" type="button">检测可识图模型</button>
+            <p id="visionProbeSummary">用当前 API Key 检测支持 image_url 的模型</p>
+          </div>
+          <div id="visionProbeResults" class="model-probe-results">
+            <p class="summary">还没有检测结果</p>
+          </div>
+        </div>
         <div class="grid-2">
           <label class="check-field option-check">
             <input id="limitCharacterTags" type="checkbox">

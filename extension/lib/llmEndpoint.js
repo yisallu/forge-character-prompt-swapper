@@ -23,3 +23,11 @@ export function llmChatCompletionsUrl(baseUrl) {
   }
   return `${base}/chat/completions`;
 }
+
+export function llmModelsUrl(baseUrl) {
+  const base = normalizeLlmBaseUrl(baseUrl);
+  if (!base) {
+    return "";
+  }
+  return `${base}/models`;
+}

@@ -4,8 +4,9 @@ import { extractPngParametersFromArrayBuffer } from "../extension/lib/pngInfo.js
 import { parseInfotext } from "../extension/lib/infotext.js";
 import { guessCharacterSegment, removeUndesiredSkinToneTags, replaceCharacterInPrompt, replacePromptSegment, splitPromptTags, stripGeneratedCharacterDetailsForDefault } from "../extension/lib/promptMerge.js";
 import { buildForgeTxt2ImgPayload } from "../extension/lib/forgePayload.js";
-import { llmChatCompletionsUrl, normalizeLlmBaseUrl } from "../extension/lib/llmEndpoint.js";
+import { llmChatCompletionsUrl, llmModelsUrl, normalizeLlmBaseUrl } from "../extension/lib/llmEndpoint.js";
 import { extractChatMessageContent, formatLlmHttpError } from "../extension/lib/llmResponse.js";
+import { buildVisionProbeRequest, evaluateVisionProbeContent, parseModelListPayload, selectVisionProbeCandidates } from "../extension/lib/llmModelProbe.js";
 import { buildIdentifyCharacterRequest, parseCharacterResponse } from "../extension/lib/characterIdentify.js";
 import { applyCharacterTagLimit } from "../extension/lib/characterPromptLimit.js";
 import { buildCleanTemplatePromptRequest, parseCleanTemplatePromptResponse } from "../extension/lib/templatePromptClean.js";
@@ -371,6 +372,27 @@ assert.equal(normalizeLlmBaseUrl("api.sysmeng.com"), "https://api.sysmeng.com/v1
 assert.equal(normalizeLlmBaseUrl("https://api.sysmeng.com"), "https://api.sysmeng.com/v1");
 assert.equal(normalizeLlmBaseUrl("https://api.sysmeng.com/v1"), "https://api.sysmeng.com/v1");
 assert.equal(llmChatCompletionsUrl("https://api.sysmeng.com/chat/completions"), "https://api.sysmeng.com/v1/chat/completions");
+assert.equal(llmModelsUrl("api.sysmeng.com"), "https://api.sysmeng.com/v1/models");
+
+const modelList = parseModelListPayload({
+  data: [
+    { id: "gpt-5.5" },
+    { id: "text-embedding-3-large" },
+    { id: "qwen2.5-vl-72b" },
+    { id: "gpt-5.5" }
+  ]
+});
+assert.deepEqual(modelList.map((model) => model.id), ["gpt-5.5", "text-embedding-3-large", "qwen2.5-vl-72b"]);
+const visionCandidates = selectVisionProbeCandidates(modelList, "mimo-v2.5-pro", 4);
+assert.equal(visionCandidates[0].id, "mimo-v2.5-pro");
+assert.ok(visionCandidates.some((model) => model.id === "qwen2.5-vl-72b"));
+assert.ok(!visionCandidates.some((model) => model.id === "text-embedding-3-large"));
+
+const visionProbeRequest = buildVisionProbeRequest({ model: "gpt-5.5" });
+assert.equal(visionProbeRequest.model, "gpt-5.5");
+assert.equal(visionProbeRequest.messages[1].content[1].image_url.detail, "low");
+assert.equal(evaluateVisionProbeContent('{"can_see_image":true,"description":"green rectangle and purple circle"}').canSeeImage, true);
+assert.equal(evaluateVisionProbeContent("I cannot view images in this chat.").canSeeImage, false);
 
 const html403Error = formatLlmHttpError(
   403,
